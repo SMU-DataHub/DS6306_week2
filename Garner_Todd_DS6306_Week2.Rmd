@@ -1,0 +1,80 @@
+---
+title: "Garner_Todd_DS6306_Week2"
+author: "Todd Garner"
+date: "2023-01-07"
+output: 
+  html_document: 
+    toc: yes
+    highlight: espresso
+    theme: spacelab
+    number_sections: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# R Markdown - Week 2 Assignment
+
+This is an R Markdown document. It will be my first attempt at the Week 2 Live assignment constructed and commented solely in RMarkdown.  I intend to restate each question within the assignment and provide the code within the document.  I also am going to practice my GitHub skills by creating a repo for this assignment.  My GitHub repo is CTG-SMU-DataHub.  I'll use "knitr" to knit the questions together to make one coherent set.  
+
+## Bullet Point 1 - *Use the PlayerBBall.csv dataset to visually represent (summarize) the number of players in each position.*
+
+First, I will load the PlayerBBall.csv into RStudio. Taking a peak at the data set with MS Excel, there are 4550 observations (rows) and 8 columns and the data set contain headings.   It would seem that a bar chart with the positions on the x-axis makes sense and then a simple count.  After reading in the data set and giving it a variable name, ggplot function within the ggplot2 package will allow this scheme to come alive.  
+```{r}
+p <- read.csv("/Users/tgarn/OneDrive/Desktop/SMU - MS Data Science/Courses/GitHub/DS_6306_weekly_assignments/Week_2/PlayersBBall.csv", header = TRUE)
+
+library(ggplot2)
+library(dplyr)
+
+p %>% ggplot(mapping = aes(x = position)) + geom_bar(stat = "count")
+```
+
+This provides the bar chart expected but the number is only an approximation.  ggplotly would provide an interactive means to bring specificity to this answer.  
+```{r}
+library(plotly)
+library(ggthemes)
+
+z = p %>% ggplot(mapping = aes(x = position)) + geom_bar(stat = "count") + theme_wsj()
+
+ggplotly(z)
+
+```
+This is a much more satisfying interactive chart that provides an exact count of each position. 
+
+## Bullet 2 - *Use the dataset to visually investigate the distribution of the weight of centers (C) is greater than the distribution of the weight of forwards (F).*
+
+There are likely numerous ways to investigate the distribution of the weights of centers (C) and forward (F), but the most straight forward is the boxplot, as show below.  
+
+```{r}
+p %>% ggplot(aes(x = position, y = weight)) + geom_boxplot()
+
+ggplot(p)
+```
+This answers the question, but it leaves me wanting a better visual solution.  A solution that:
+1. Isolates centers and forwards
+2. Quantifies the weight distribution for each position
+
+I will devote a half hour to seeking a solution.  
+
+First, to isolate the centers and forwards from the rest of the positions. Then, take the weight of the centers and then the weight of the forwards.  
+
+
+```{r}
+C = p[p$position == "C",]
+F = p[p$position == "F",]
+
+WC = .colMeans(C$weight, length(C), 1, na.rm = FALSE)
+WF = .colMeans(F$weight, length(F), 1, na.rm = FALSE)
+
+paste("The average weight of the centers is,", WC,"pounds, and the average weight of the forwards is,", WF,"pounds.")
+```
+I recognize that although numerically pleasing, it doesn't specifically address the issue of "visualizing" the difference in weights.
+
+Since I spent an hour on this, I'm hoping that the combined solution will satisfy the client.  
+
+## Bullet 3 - *
+
+
+
+
