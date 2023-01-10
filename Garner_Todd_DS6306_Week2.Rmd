@@ -30,12 +30,13 @@ library(dplyr)
 p %>% ggplot(mapping = aes(x = position)) + geom_bar(stat = "count")
 ```
 
-This provides the bar chart expected but the number is only an approximation.  ggplotly would provide an interactive means to bring specificity to this answer.  
+This provides the bar chart, as expected, but the number is only an approximation.  ggplotly would provide an interactive means to bring specificity to this answer.  
 ```{r}
 library(plotly)
 library(ggthemes)
 
-z = p %>% ggplot(mapping = aes(x = position)) + geom_bar(stat = "count") + theme_wsj()
+z = p %>% ggplot(mapping = aes(x = position)) + geom_bar(stat = "count") + theme_economist() + labs(xlab = "position", ylab = "frequency", title = "Players in each position")
+                                                                                                
 
 ggplotly(z)
 
@@ -47,9 +48,8 @@ This is a much more satisfying interactive chart that provides an exact count of
 There are likely numerous ways to investigate the distribution of the weights of centers (C) and forward (F), but the most straight forward is the boxplot, as show below.  
 
 ```{r}
-p %>% ggplot(aes(x = position, y = weight)) + geom_boxplot()
+p %>% ggplot(aes(x = position, y = weight)) + geom_boxplot() + theme_economist() + labs(xlab = "position", ylab = "weight in pounds", title = "Distribution of weight by position")
 
-ggplot(p)
 ```
 This answers the question, but it leaves me wanting a better visual solution.  A solution that:
 1. Isolates centers and forwards
@@ -62,18 +62,307 @@ First, to isolate the centers and forwards from the rest of the positions. Then,
 
 ```{r}
 C = p[p$position == "C",]
-F = p[p$position == "F",]
+Forw = p[p$position == "F",]
 
 WC = .colMeans(C$weight, length(C), 1, na.rm = FALSE)
-WF = .colMeans(F$weight, length(F), 1, na.rm = FALSE)
+WF = .colMeans(Forw$weight, length(Forw), 1, na.rm = FALSE)
 
 paste("The average weight of the centers is,", WC,"pounds, and the average weight of the forwards is,", WF,"pounds.")
 ```
-I recognize that although numerically pleasing, it doesn't specifically address the issue of "visualizing" the difference in weights.
+I recognize that although numerically pleasing, it doesn't specifically address the issue of "visualizing" the difference in weights, but the distribution of weights is shown visually via the box plot.  I'm hoping that the combined solution will satisfy the client.  
 
-Since I spent an hour on this, I'm hoping that the combined solution will satisfy the client.  
+## Bullet 3 - *Use the dataset to visually investigate if the distribution of the height of centers (C) is greater than the distribution of the height of forwards (F).*
 
-## Bullet 3 - *
+This should be fairly straight forward (said the man headed to the gallows).  I will repeat the Bullet 2 process.  First, I'll refresh the dataset.  The operation will be to separate the feet and inches and convert feet to inches so we can have uniformity.  First, the height column is a character.  The task is to either split the characters of feet and inches into two separate columns, get rid of the "-" in between and then convert to numeric and then recreate the height column with units of inches.  Or, the same operation, but first converting to numeric and then the rest.  My guess is that the first method will be the way to go and that's what I'm going to attack. 
+
+After spending way too much time trying to wrangle the data via RStudio, I took another approach which was to modify the data in Excel to inches.  This is probably not the intended solution, but it's hard to argue with results.  And, if this were a client, I don't think they'd care how you arrived at the solution.  The DS6306 professor, on the other hand, may have something to say about this.  But, I've been transparent with my methods.  
+
+After importing the new dataset, I will address the question posed in bullet 3.  
+
+```{r}
+j <- read.csv("/Users/tgarn/OneDrive/Desktop/SMU - MS Data Science/Courses/GitHub/DS_6306_weekly_assignments/Week_2/DS6306_week2/PlayersBBall.csv", header = TRUE)
+
+j %>% ggplot(aes(x = position, y = height)) + geom_boxplot() + theme_economist() + labs(x = "position", y = "height in inches", title = "Player height by position")
+
+```
+We can see from the boxplot that the distribution of the Centers is greater than the distribution of the Forwards.  
+
+## Bullet 4 - *Use the dataset to visually investigate if the distribution of height is different between any of the positions.*
+
+Once again, we utilize the boxplot to visually see that each of the position's heights are differently distributed.  
+
+```{r}
+j <- read.csv("/Users/tgarn/OneDrive/Desktop/SMU - MS Data Science/Courses/GitHub/DS_6306_weekly_assignments/Week_2/DS6306_week2/PlayersBBall.csv", header = TRUE)
+
+j %>% ggplot(aes(x = position, y = height, color = position)) + geom_boxplot() + theme_economist() + xlab("Position") + ylab("height in inches") + labs(title = "Distribution of player height by position")
+```
+
+## Bullet 5 - *Use the dataset to investigate how the player’s height is related to the player’s weight. How does height change as the weight changes?*
+
+I would imagine that regression would be helpful but could be as simple as correlation.  Let's give is a shot.  
+```{r}
+j <- read.csv("/Users/tgarn/OneDrive/Desktop/SMU - MS Data Science/Courses/GitHub/DS_6306_weekly_assignments/Week_2/DS6306_week2/PlayersBBall.csv", header = TRUE)
+
+x = data.frame(j$height)
+head(x)
+y = data.frame(j$weight)
+head(y)
+AA = cor(x, y)
+head(AA)
+
+lm(height~weight, j)
+
+
+```
+```{r}
+summary(lm(height~weight, j))
+```
+```{r}
+ggplot(j, aes(x = height, y = weight)) + geom_point() + stat_smooth(method = "lm") + labs(x = "height in inches", y = "weight in pounds", title = "relationship of players weight and height") + theme_economist()
+```
+From the data and the plot, we can see that weight and height are positively correlated.  The equation is:
+### Height = 54.013286" + 0.115246*(Weight)"
+
+## Bullet 6 - *Is there any difference in the relationship between height and weight between positions?  Are height and weight related differently for different positions?*
+
+To accomplish this, I first need to separate the positions into unique datasets for each position.  Then, perform the same regression analysis as the prior question.  Since there are 7 separate positions, this would make an untenable number of iterations from which to analyze each position against all the others.  Perhaps splitting into 7 different dataframes and performing a linear regression on each set would suffice.  The linear equation results for each could be analyzed against the others.  The resultant equation for each position could then be plotted against the others. 
+
+First, the create 7 new datasets for C, C-F, F, F-C, C-F, G-F and G.  
+
+```{r}
+j <- read.csv("/Users/tgarn/OneDrive/Desktop/SMU - MS Data Science/Courses/GitHub/DS_6306_weekly_assignments/Week_2/DS6306_week2/PlayersBBall.csv", header = TRUE)
+
+
+data_C <- j[j$position == "C",]
+head(data_C)
+data_C_F <- j[j$position == "C-F",]
+head(data_C_F)
+data_F <- j[j$position == "F",]
+head(data_F)
+data_F_C <- j[j$position == "F-C",]
+head(data_F_C)
+data_C_F <- j[j$position == "C-F",]
+head(data_C_F)
+data_G_F <- j[j$position == "G-F",]
+head(data_G_F)
+data_G <- j[j$position == "G",]
+head(data_G)
+
+
+```
+Now, I'll run the linear regression and summary function for each position with relationship defined between height and weight.  
+
+### For Centers
+
+```{r}
+summary(lm(height~weight, data_C))
+
+```
+### For Centers: Height = 72.79823" + 0.04366*(Weight)"
+
+
+### For Center-Forwards
+
+```{r}
+summary(lm(height~weight, data_C_F))
+```
+### For Center-Forwards: Height = 71.376293" + 0.044458*(Weight)"
+
+
+
+### For Forwards:
+```{r}
+summary(lm(height~weight, data_F))
+
+```
+### For Forwards: Height = 66.670252" + 0.058144*(Weight)"
+
+
+
+### For Forward-Centers:
+```{r}
+summary(lm(height~weight, data_F_C))
+
+```
+### For Forward-Centers: Height = 67.263795" + 0.059396*(Weight)"
+
+
+### For Guards:
+```{r}
+summary(lm(height~weight, data_G))
+
+```
+### For Guards: Height = 56.502390" + 0.097051*(Weight)"
+
+
+
+### For Guard-Forwards:
+```{r}
+summary(lm(height~weight, data_G_F))
+```
+### For Guard-Forwards: Height = 58.697623" + 0.097051*(Weight)"
+
+### **Each position has a different linear equation describing the relationship of the height/weight of each.  Therefore, we can say that there is a different relationship amongst the different positions.**
+
+## Bullet 7 - A historian would like to investigae the claim that the heights of players have increased over the years.  Analyse this claim graphically/visually.  
+
+For this question, we need to plot the years versus the heights as a scatter plot and draw a trend line.  
+Perhaps there's a more straight forward means to evaluate this claim.  If we performed a linear regression on the years and the heights of the players, it should lead us to an equation that will answer this question.  As there are two dates to select from, I believe it's best to select one or the other as the height is not likely to have changed much, if any during their career.  To take the possibility of some change out, I choose to select the ending year. 
+
+```{r}
+summary(lm(height~year_end, j))
+
+```
+
+
+
+Height = Year*(.056111) - 33.550543
+
+For 2000: Height = (2000*.05611) -33.550543 = 79.222 inches
+
+Let's check the correlation:
+
+```{r}
+library(dplyr)
+
+j <- read.csv("/Users/tgarn/OneDrive/Desktop/SMU - MS Data Science/Courses/GitHub/DS_6306_weekly_assignments/Week_2/DS6306_week2/PlayersBBall.csv", header = TRUE)
+
+cor(j$year_end, j$height)
+
+
+```
+This strongly suggests that there is a positive correlation between height and years, from the data provided in the table. 
+
+
+## Bullet 8 - *Create a 3D plot of height vs. weight vs. year and color code the points by position.*
+
+My thought as I dig into this is, "What could go wrong?"
+
+p <- plot_ly(j, x = ~height, y = ~weight, Z = ~year, color = position) %>% add_markers() %>% 
+layout( scene = list(xaxis = list(title = "Height"),
+yaxis = list(title = "Weight"), zaxis = list(title = "Year")))
+
+```{r}
+library(plotly)
+
+j <- read.csv("/Users/tgarn/OneDrive/Desktop/SMU - MS Data Science/Courses/GitHub/DS_6306_weekly_assignments/Week_2/DS6306_week2/PlayersBBall.csv", header = TRUE)
+
+p <- plot_ly(j, x = ~height, y = ~weight, z = ~year_end, color = ~position) %>% add_markers() %>% layout(scene = list(xaxis = list(title = "Height"),yaxis = list(title = "Weight"), zaxis = list(title = "Year")))
+p
+```
+## Bullet 9 - *Go to this website and use one of the 50 best plots to visualize some aspect of the data and provide at least one insight.  You will present your work in breakout:  http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.htm *
+
+I found 4 of the different visualizations particularly pleasing:
+1. Marginal Histogram/Boxplot
+2. Treemap
+3. Time Series Heat Map
+4. Spatial
+
+I've seen many of the maps on the web site and the treemap is LOADED with information.  I've seen that on TV and in magazines.  Rich with content.  Most people have seen the Spatial maps and they are useful when using GIS or other terrestrial landscape features.  I had not seen the Time Series Heat Map, but I truly liked it as it was very illuminating for functions that occur over time and for gleaning recurring patterns.  Sales come to mind as does stock and securities trading.  The one that I hadn't seen and believe has the most appeal to the current dataset is the Marginal Histogram/Boxplot map.  It provides an added 2 dimensions to otherwise static data.  Let me see what I can do with it.  
+
+
+
+#```{r}
+#reload BBall CSV
+j <- read.csv("/Users/tgarn/OneDrive/Desktop/SMU - MS Data Science/Courses/GitHub/DS_6306_weekly_assignments/Week_2/DS6306_week2/PlayersBBall.csv", header = TRUE)
+# load package and data
+library(ggplot2)
+#install.packages('ggExtra')
+library(ggExtra)
+data(j, package="ggplot2")
+# mpg <- read.csv("http://goo.gl/uEeRGu")
+
+# Scatterplot
+theme_set(theme_economist())  # pre-set the bw theme.
+BBall_select <- j[j$year_start >= 2011  & j$height >= 87]
+g <- ggplot(j, aes(position, height)) + 
+  geom_count() + 
+  #geom_smooth(method="lm", se=F)
+
+#ggMarginal(g, type = "histogram", fill="transparent")
+ggMarginal(g, type = "boxplot", fill="transparent")
+#ggMarginal(g, type = "density", fill="transparent")
+#```
+Apparently, not much.  I need to attack this again from another angle.  Perhaps the Treemap for positions, then count the members of each, and the year?  This dataset isn't perfect for this feature.  I've literally run out of time.  I'm going to take a stab at the very last question with a different dataset EducationIncome.csv.  Epic fail.  
+
+
+
+
+#```{r}
+library(ggplot2) 
+#install.packages('ggplotify')
+library(treemapify)
+library(ggplotify)
+proglangs <- read.csv("/Users/tgarn/OneDrive/Desktop/SMU - MS Data Science/Courses/GitHub/DS_6306_weekly_assignments/Week_2/DS6306_week2/PlayersBBall.csv", header = TRUE)
+
+# plot
+treeMapCoordinates <- treemapify(proglangs,
+                                 area = "year_end",
+                                 fill = "weight")
+
+treeMapPlot <- ggplotify(treeMapCoordinates) + 
+                  scale_x_continuous(expand = c(0, 0)) +
+                  scale_y_continuous(expand = c(0, 0)) +
+                  scale_fill_brewer(palette = "Dark2")
+
+print(treeMapPlot)
+#```
+
+## Last Question - *Use the EducationIncome.csv dataset to visually test the claim that the distribution of incomes increase (mean or median) as the education level rises.*
+
+First, I'll load in the dataset and take a look at what we've got.  
+
+```{r}
+Ed <- read.csv("/Users/tgarn/OneDrive/Desktop/SMU - MS Data Science/Courses/GitHub/DS_6306_weekly_assignments/Week_2/DS6306_week2/Education_Income.csv", header = TRUE)
+head(Ed)
+
+#Let's explore how many unique values we have in the Educ column
+
+unique(Ed$Educ, incomparables = FALSE)
+```
+Seeing that there are 5 unique timesframes in years, I believe that the most straightforward method, given the remaining time, would be to use these characters to select the values for rising years in education and compare it against Income.  I think we can discard the values "<12" and just go with "12" and compare that to "13-15", "16" and ">16".  
+
+```{r}
+data_12 <- Ed[Ed$Educ == "12",]
+#head(data_12)
+E12 <- data.frame(data_12$Income2005)
+#head(E12)
+summary(E12)
+data_13_15 <- Ed[Ed$Educ == "13-15",]
+#head(data_13_15)
+E_13_15 <- data.frame(data_13_15$Income2005)
+#head(E_13_15)
+summary(E_13_15)
+data_16 <- Ed[Ed$Educ == "16",]
+#head(data_16)
+E_16 <- data.frame(data_16$Income2005)
+#head(E_16)
+summary(E_16)
+data_over_16 <- Ed[Ed$Educ == ">16",]
+#head(data_over_16)
+E_over_16 <- data.frame(data_over_16$Income2005)
+#head(E_over_16)
+summary(E_over_16)
+
+
+
+```
+The medians show that with rising education there is a strong suggestion that incomes also rise.  
+
+
+*I'm not happy with my work on this Live Set 2 at all.  It's beneath my quality standards.  I spent countless hours spinning my wheels.  I've got to do better in finding solutions.  I took shortcuts with the modifying the dataset early on and didn't have time to come back and change it, even though I figured out how to do so.  I'm embarrassed to turn this in.  I clearly have a lot of work to do in order to be more efficient with my time.  My apologize to the professor for this subpar work.  
+
+```{r}
+sessionInfo()
+```
+
+
+
+
+
+
+
+
 
 
 
