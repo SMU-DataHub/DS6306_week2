@@ -1,0 +1,81 @@
+---
+title: "Question 9 - redo"
+author: "Todd Garner"
+date: "2023-01-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 9 - redo
+
+I'm going to attempt to completed question 9 with visualizations.  
+
+```{r}
+
+```
+
+## Bullet 9 - *Go to this website and use one of the 50 best plots to visualize some aspect of the data and provide at least one insight.  You will present your work in breakout:  http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.htm *
+
+I found 4 of the different visualizations particularly pleasing:
+1. Marginal Histogram/Boxplot
+2. Treemap
+3. Time Series Heat Map
+4. Spatial
+
+I've seen many of the maps on the web site and the treemap is LOADED with information.  I've seen that on TV and in magazines.  Rich with content.  Most people have seen the Spatial maps and they are useful when using GIS or other terrestrial landscape features.  I had not seen the Time Series Heat Map, but I truly liked it as it was very illuminating for functions that occur over time and for gleaning recurring patterns.  Sales come to mind as does stock and securities trading.  The one that I hadn't seen and believe has the most appeal to the current dataset is the Marginal Histogram/Boxplot map.  It provides an added 2 dimensions to otherwise static data.  Let me see what I can do with it.  
+
+
+
+```{r}
+#reload BBall CSV
+j <- read.csv("/Users/tgarn/OneDrive/Desktop/SMU - MS Data Science/Courses/GitHub/DS_6306_weekly_assignments/Week_2/DS6306_week2/PlayersBBall.csv", header = TRUE)
+df_j <- data.frame(j,row.name = 1)
+#df_j
+# load package and data
+library(ggplot2)
+#install.packages('ggExtra')
+library(ggExtra)
+library(ggthemes)
+data(df_j, package="ggplot2")
+#df_j <- as.numeric(df_j)
+# mpg <- read.csv("http://goo.gl/uEeRGu")
+
+# Scatterplot
+theme_set(theme_economist())  # pre-set the WSJ theme.
+#BBall_select <- df_j[df_j$position == all(df_j, na.rm = TRUE)]
+g <- ggplot(df_j, aes(position, height)) + geom_count() + geom_smooth(method="lm", se=F)
+
+#df_g <- data.frame(g, row.name = 1)
+
+#ggMarginal(g, type = "histogram", fill="transparent")
+ggMarginal(g, type = c("densigram"), margins = c("both"), size = 5, groupColor = FALSE, groupFill=FALSE)
+#ggMarginal(g, type = "density", fill="transparent")
+```
+Apparently, not much.  I need to attack this again from another angle.  Perhaps the Treemap for positions, then count the members of each, and the year?  This dataset isn't perfect for this feature.  I've literally run out of time.  I'm going to take a stab at the very last question with a different dataset EducationIncome.csv.  Epic fail.  
+
+
+
+
+#```{r}
+library(ggplot2) 
+#install.packages('ggplotify')
+library(treemapify)
+library(ggplotify)
+proglangs <- read.csv("/Users/tgarn/OneDrive/Desktop/SMU - MS Data Science/Courses/GitHub/DS_6306_weekly_assignments/Week_2/DS6306_week2/PlayersBBall.csv", header = TRUE)
+
+# plot
+treeMapCoordinates <- treemapify(proglangs,
+                                 area = "year_end",
+                                 fill = "weight")
+
+treeMapPlot <- ggplotify(treeMapCoordinates) + 
+                  scale_x_continuous(expand = c(0, 0)) +
+                  scale_y_continuous(expand = c(0, 0)) +
+                  scale_fill_brewer(palette = "Dark2")
+
+print(treeMapPlot)
+#```
+
